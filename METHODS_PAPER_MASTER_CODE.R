@@ -386,6 +386,9 @@ if(MODELSRUN){
 #######################
 
 graphics.off()
+
+svg("importancefig.svg",height=7,width=7)
+
 par(mfcol=c(2,2))
 par(mai=c(1,1.5,0.6,0.4))
 lengthndx <- length(RFs[[impname]])
@@ -463,6 +466,7 @@ barplot(height=glm_importance[order(abs(glm_importance),decreasing = FALSE)],
          names.arg=predictorNames[match(names(glm_importance),stand_pred.names)][order(abs(glm_importance),decreasing = FALSE)])
 
 
+dev.off()
 
 ## note: comparison of RF vs GLMM "importance" values vs regression coefficients of standardized variables for RSF can 
     #  indicate the degree to which nonlinearities and interactions play a role!
@@ -499,6 +503,8 @@ VisualizeRelation(data=deer[[season]],model=GLMMs[[season]],predvar="dist_to_wat
 
 season="summer"
 graphics.off()
+
+svg("summerunivarplots.svg",6,6)
 par(mfcol=c(3,2))
 par(mai=c(0.8,0.8,0,0))
 
@@ -512,10 +518,12 @@ VisualizeRelation(data=deer[[season]],model=GLMMs[[season]],predvar="elevation",
 VisualizeRelation(data=deer[[season]],model=GLMMs[[season]],predvar="slope",type="GLMM")
 VisualizeRelation(data=deer[[season]],model=GLMMs[[season]],predvar="dist_to_water",type="GLMM")
 
+dev.off()
 
-
+graphics.off()
 season <- "winter"
-graphics.off()
+svg("winterunivariateplots.svg",6,6)
+
 par(mfcol=c(3,2))
 par(mai=c(0.8,0.8,0,0))
 
@@ -529,20 +537,28 @@ VisualizeRelation(data=deer[[season]],model=GLMMs[[season]],predvar="elevation",
 VisualizeRelation(data=deer[[season]],model=GLMMs[[season]],predvar="slope",type="GLMM")
 VisualizeRelation(data=deer[[season]],model=GLMMs[[season]],predvar="dist_to_water",type="GLMM")
 
+dev.off()
 
 
-season="summer"
 graphics.off()
+season="summer"
+svg("vegplots.svg",6,6)
+
 par(mfrow=c(2,2))
 par(mai=c(1.5,0.8,0,0))
 
 VisualizeRelation(data=deer[[season]],model=RFs[[season]],predvar="veg_class",type="RF")
 VisualizeRelation(data=deer[[season]],model=GLMMs[[season]],predvar="veg_class",type="GLMM")
 
+
+
 season="winter"
+#svg("wintervegplots.svg",6,5)
 
 VisualizeRelation(data=deer[[season]],model=RFs[[season]],predvar="veg_class",type="RF")
 VisualizeRelation(data=deer[[season]],model=GLMMs[[season]],predvar="veg_class",type="GLMM")
+
+dev.off()
 
 #######################
 ## Visualize interactions
@@ -582,6 +598,7 @@ VisualizeInteraction(data=deer[[season]],model=GLMMs[[season]],var1="slope",var2
 
 
 graphics.off()
+svg("disttowater_vs_elevation.svg",6,6)
 par(mfrow=c(2,2))
 
 season <- "summer"
@@ -593,9 +610,11 @@ season <- "winter"
 VisualizeInteraction(data=deer[[season]],model=RFs[[season]],var1="dist_to_water",var2="elevation",type="RF")
 VisualizeInteraction(data=deer[[season]],model=GLMMs[[season]],var1="dist_to_water",var2="elevation",type="GLMM")
 
+dev.off()
 
 
 graphics.off()
+svg("slope_vs_elevation.svg",6,6)
 par(mfrow=c(2,2))
 
 season <- "summer"
@@ -607,7 +626,7 @@ season <- "winter"
 VisualizeInteraction(data=deer[[season]],model=RFs[[season]],var1="slope",var2="elevation",type="RF")
 VisualizeInteraction(data=deer[[season]],model=GLMMs[[season]],var1="slope",var2="elevation",type="GLMM")
 
-
+dev.off()
 
 
 
