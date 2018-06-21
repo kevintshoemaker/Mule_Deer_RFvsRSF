@@ -94,6 +94,9 @@ VisualizeRelation <- function(data=deer[["summer"]],model=GLMMs[["summer"]],pred
 
 VisualizeInteraction <- function(data=deer[["summer"]],model=GLMMs[["summer"]],var1="dist_to_water",var2="elevation",type="GLMM"){
   len <- 50
+  
+  dataclasses <- sapply(data,class)
+  
   if(type=="GLMM"){
     standvar1 <- sprintf("stand_%s",var1)
     standvar2 <- sprintf("stand_%s",var2)
@@ -175,10 +178,10 @@ type= "GLMM" #"RF"
 season="summer"
 fullmodel=GLMMs[[season]] #RFs[[season]]
 
-CrossValidateByDeer <- function(n.folds,season="summer",type="RF",plot=F){
-  uniquedeer <- as.character(unique(deer[[season]]$altid))
-  ndeer <- length(uniquedeer)
-  folds_df <- data.frame(
+CrossValidateByDeer <- function(n.folds,season="summer",type="GLMM",plot=F){
+  uniquedeer <- as.character(unique(deer[[season]]$altid))  # list of all unique animals
+  ndeer <- length(uniquedeer)  # total number of inds
+  folds_df <- data.frame( 
     deer = uniquedeer,
     fold = rep_len(1:n.folds,ndeer)
   )
@@ -205,7 +208,7 @@ CrossValidateByDeer <- function(n.folds,season="summer",type="RF",plot=F){
   
   counter = 1
   
-  i=1
+  i=n.folds
   for(i in 1:n.folds){
     if(type=="RF"){
       model <- cforest(formula1, data = deer[[season]][which(foldVector!=i),], controls=cforestControl) 
@@ -220,22 +223,15 @@ CrossValidateByDeer <- function(n.folds,season="summer",type="RF",plot=F){
         counter = counter + 1  
       }
     }else{
-      if(season=="summer"){
-        model <- glmer(used~stand_dist_to_water + stand_cos_aspect + stand_sin_aspect + 
-                         stand_elevation + stand_slope + veg_class + stand_elevation:stand_slope +
-                         stand_dist_to_water:stand_slope + stand_dist_to_water:stand_elevation +
-                         (1|altid), family="binomial", data=deer[[season]][which(foldVector!=i),],na.action="na.fail") 
-      }else{
-        model <- glmer(used~stand_dist_to_water + stand_cos_aspect + stand_sin_aspect + 
-                stand_elevation + stand_slope + veg_class +  stand_elevation:stand_slope +
-                stand_dist_to_water:stand_slope +
-                (1|altid), family="binomial", data=deer[[season]][which(foldVector!=i),],na.action="na.fail")
-      }
+      
+      model <- glmer(attributes(GLMMs[[season]]@frame)$formula, 
+                       family="binomial", data=deer[[season]][which(foldVector!=i),],na.action="na.fail") 
       
       CVresults$CVpred[which(foldVector==i)]  <- plogis(predict(model,newdata=deer[[season]][which(foldVector==i),],allow.new.levels = TRUE)) 
       CVresults$realpred[which(foldVector==i)] <-  predict(fullmodel,newdata=deer[[season]][which(foldVector==i),],allow.new.levels = TRUE)
       CVresults$observed[which(foldVector==i)] <- deer[[season]]$used[which(foldVector==i)]      
     }
+    cat(sprintf("fold %s out of %s\n",i,n.folds))
   }
   
   CVresults$CV_RMSE = sqrt(mean((CVresults$observed-CVresults$CVpred)^2))       # root mean squared error for holdout samples in 10-fold cross-validation ...
@@ -361,7 +357,6 @@ PlotPerformance <- function(CVresults){
     plot(perf, main=sprintf("%s Full Model",type))
     text(.9,.1,paste("AUC = ",round(auc@y.values[[1]],2),sep=""))
 }
-
 
 
 

@@ -35,6 +35,7 @@ library(pROC)    # for running the delong test
 
 library(raster)
 library(rgdal)
+library(prettymapr)
 
 
 ################
@@ -140,6 +141,26 @@ if(MODELSRUN){
   rm(summerGLMM,winterGLMM)
   
 }else{
+  
+  
+  ##### GLOBAL MODEL
+  
+  summer_pequop_model=glmer(used~stand_dist_to_water+(stand_dist_to_water*stand_elevation)+(stand_dist_to_water*stand_slope)
+                            +(stand_elevation*stand_slope)+stand_cos_aspect+stand_sin_aspect
+                            +stand_elevation+stand_slope+veg_class+(1|altid),family="binomial",data=deer$summer,nAGQ = 1, na.action="na.fail") # generalized linear mixed effect 
+  
+  summary(summer_pequop_model)
+  
+       # find the best model using "dredge" function
+  
+  summer_dred<- dredge(summer_pequop_model, trace = TRUE, rank = "AICc", REML = FALSE)
+  summer_dred
+  
+  write.csv(model_summary$coefficients, file= "top_summer_main_result_cincodemayo.csv")
+  write.csv(summer_dred, file= "winter_main_dredge_result_CINCODEMAYO.csv")
+  
+       # run the best models
+  
   summerGLMM=glmer(used~stand_dist_to_water + stand_cos_aspect + stand_sin_aspect + 
                               stand_elevation + stand_slope + veg_class + stand_elevation:stand_slope +
                               stand_dist_to_water:stand_slope + stand_dist_to_water:stand_elevation +
@@ -467,11 +488,9 @@ VisualizeInteraction(data=deer[[season]],model=GLMMs[[season]],var1="slope",var2
 dev.off()
 
 
-
 #################
 # MODEL SELECTION: GLMM
 #################
-
 
 if(!MODELSRUN){
   
@@ -686,19 +705,19 @@ rastercovs[["summer"]] <- list()
 setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters\\summer_cos")
 rastercovs[["summer"]][["cos_aspect"]] <- raster("w001001.adf") 
    #rastercovs[["summer"]][["cos_aspect"]] <- trim(rastercovs[["summer"]][["cos_aspect"]]) # note: trim function takes too long to run here..
-plot(rastercovs[["summer"]][["cos_aspect"]])
+#plot(rastercovs[["summer"]][["cos_aspect"]])
 
 old_summer_extent <- extent(rastercovs[["summer"]][["cos_aspect"]])
 summer_extent <- extent(old_summer_extent@xmin,680000,4580000,4635000)
 rastercovs[["summer"]][["cos_aspect"]] <- crop(rastercovs[["summer"]][["cos_aspect"]],summer_extent)
-plot(rastercovs[["summer"]][["cos_aspect"]])
+#plot(rastercovs[["summer"]][["cos_aspect"]])
 
 rastercovs[["summer"]][["cos_aspect"]] <- trim(rastercovs[["summer"]][["cos_aspect"]])
 summer_extent <- extent(rastercovs[["summer"]][["cos_aspect"]])   # final extent!
 rastercovs[["summer"]][["cos_aspect"]] <- crop(rastercovs[["summer"]][["cos_aspect"]],summer_extent)
 plot(rastercovs[["summer"]][["cos_aspect"]])
 
-rastercovs[["summer"]][["cos_aspect"]] <- aggregate(rastercovs[["summer"]][["cos_aspect"]], fact=3, fun=modal)
+rastercovs[["summer"]][["cos_aspect"]] <- aggregate(rastercovs[["summer"]][["cos_aspect"]], fact=4, fun=modal)
 plot(rastercovs[["summer"]][["cos_aspect"]])
 
 summer_crs <- rastercovs[["summer"]][["cos_aspect"]]@crs 
@@ -707,28 +726,28 @@ summer_crs <- rastercovs[["summer"]][["cos_aspect"]]@crs
 setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters\\summer_sin")
 rastercovs[["summer"]][["sin_aspect"]] <- raster("w001001.adf")
 rastercovs[["summer"]][["sin_aspect"]] <- crop(rastercovs[["summer"]][["sin_aspect"]],summer_extent)
-rastercovs[["summer"]][["sin_aspect"]] <- aggregate(rastercovs[["summer"]][["sin_aspect"]], fact=3, fun=modal)
+rastercovs[["summer"]][["sin_aspect"]] <- aggregate(rastercovs[["summer"]][["sin_aspect"]], fact=4, fun=modal)
 plot(rastercovs[["summer"]][["sin_aspect"]])
 
 ## summer elevation
 setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters\\summer_elev")
 rastercovs[["summer"]][["elevation"]] <- raster("w001001.adf")
 rastercovs[["summer"]][["elevation"]] <- crop(rastercovs[["summer"]][["elevation"]],summer_extent)
-rastercovs[["summer"]][["elevation"]] <- aggregate(rastercovs[["summer"]][["elevation"]], fact=3, fun=modal)
+rastercovs[["summer"]][["elevation"]] <- aggregate(rastercovs[["summer"]][["elevation"]], fact=4, fun=modal)
 plot(rastercovs[["summer"]][["elevation"]])
 
 ## summer slope
 setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters\\summer_slope")
 rastercovs[["summer"]][["slope"]] <- raster("w001001.adf")
 rastercovs[["summer"]][["slope"]] <- crop(rastercovs[["summer"]][["slope"]],summer_extent)
-rastercovs[["summer"]][["slope"]] <- aggregate(rastercovs[["summer"]][["slope"]], fact=3, fun=modal)
+rastercovs[["summer"]][["slope"]] <- aggregate(rastercovs[["summer"]][["slope"]], fact=4, fun=modal)
 plot(rastercovs[["summer"]][["slope"]])
 
 ## summer dist to water
 setwd(spatialdir)
 rastercovs[["summer"]][["dist_to_water"]] <- raster("Summer_H20.tif")
 rastercovs[["summer"]][["dist_to_water"]] <- crop(rastercovs[["summer"]][["dist_to_water"]],summer_extent)
-rastercovs[["summer"]][["dist_to_water"]] <- aggregate(rastercovs[["summer"]][["dist_to_water"]], fact=3, fun=modal)
+rastercovs[["summer"]][["dist_to_water"]] <- aggregate(rastercovs[["summer"]][["dist_to_water"]], fact=4, fun=modal)
 #extent(rastercovs[["summer"]][["dist_to_water"]]) <- summer_extent 
 rastercovs[["summer"]][["dist_to_water"]] <- projectRaster(rastercovs[["summer"]][["dist_to_water"]],rastercovs[["summer"]][["slope"]])
 plot(rastercovs[["summer"]][["dist_to_water"]])
@@ -743,7 +762,7 @@ subs <- attrib[[1]][,c("Value","Habitat_Type")]
 subs$HabType2 <- c("Riparian","PJ","mtn_mahog","asage","intro_grass","grassland","shb_mead","roads","desert_scrub","Dec_shrub","aspen","NA")
 habitats <- rastercovs[["summer"]][["veg_class"]]@data@attributes[[1]]$Habitat_Type
 is.factor(rastercovs[["summer"]][["veg_class"]])
-rastercovs[["summer"]][["veg_class"]] <- aggregate(rastercovs[["summer"]][["veg_class"]], fact=3, fun=modal)
+rastercovs[["summer"]][["veg_class"]] <- aggregate(rastercovs[["summer"]][["veg_class"]], fact=4, fun=modal)
 rastercovs[["summer"]][["veg_class"]] <- projectRaster(rastercovs[["summer"]][["veg_class"]],rastercovs[["summer"]][["slope"]],method="ngb")
 rastercovs[["summer"]][["veg_class"]] <- ratify(rastercovs[["summer"]][["veg_class"]])
 rat <- levels(rastercovs[["summer"]][["veg_class"]])[[1]]
@@ -765,9 +784,9 @@ res(rastercovs[["summer"]][["veg_class"]])
 # WINTER!
 #########
 
-## winter cosine    ## DOESN'T WORK
-setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters\\winter_cos")
-rastercovs[["winter"]][["cos_aspect"]] <- raster("w001001.adf") 
+## winter cosine
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters")
+rastercovs[["winter"]][["cos_aspect"]] <- raster("Winter_Cos2.tif") 
 #rastercovs[["winter"]][["cos_aspect"]] <- trim(rastercovs[["winter"]][["cos_aspect"]]) # note: trim function takes too long to run here..
 plot(rastercovs[["winter"]][["cos_aspect"]])
 
@@ -781,43 +800,55 @@ winter_extent <- extent(rastercovs[["winter"]][["cos_aspect"]])   # final extent
 rastercovs[["winter"]][["cos_aspect"]] <- crop(rastercovs[["winter"]][["cos_aspect"]],winter_extent)
 plot(rastercovs[["winter"]][["cos_aspect"]])
 
-rastercovs[["winter"]][["cos_aspect"]] <- aggregate(rastercovs[["winter"]][["cos_aspect"]], fact=3, fun=modal)
+rastercovs[["winter"]][["cos_aspect"]] <- aggregate(rastercovs[["winter"]][["cos_aspect"]], fact=4, fun=modal)
 plot(rastercovs[["winter"]][["cos_aspect"]])
 
 ## winter sine  ## DOESN'T WORK
-setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters\\winter_sin")
-rastercovs[["winter"]][["sin_aspect"]] <- raster("w001001.adf")
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters")
+rastercovs[["winter"]][["sin_aspect"]] <- raster("Winter_Sin2.tif")
 rastercovs[["winter"]][["sin_aspect"]] <- crop(rastercovs[["winter"]][["sin_aspect"]],winter_extent)
-rastercovs[["winter"]][["sin_aspect"]] <- aggregate(rastercovs[["winter"]][["sin_aspect"]], fact=3, fun=modal)
+rastercovs[["winter"]][["sin_aspect"]] <- aggregate(rastercovs[["winter"]][["sin_aspect"]], fact=4, fun=modal)
 plot(rastercovs[["winter"]][["sin_aspect"]])
 
 ## winter elevation
 setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters\\winter_elev")
 rastercovs[["winter"]][["elevation"]] <- raster("w001001.adf")
 rastercovs[["winter"]][["elevation"]] <- crop(rastercovs[["winter"]][["elevation"]],winter_extent)
-rastercovs[["winter"]][["elevation"]] <- aggregate(rastercovs[["winter"]][["elevation"]], fact=3, fun=modal)
+rastercovs[["winter"]][["elevation"]] <- aggregate(rastercovs[["winter"]][["elevation"]], fact=4, fun=modal)
+rastercovs[["winter"]][["elevation"]] <- projectRaster(rastercovs[["winter"]][["elevation"]],rastercovs[["winter"]][["sin_aspect"]])
 plot(rastercovs[["winter"]][["elevation"]])
 
-## winter slope  ## DOESN'T WORK
-setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters\\winter_slope")
-rastercovs[["winter"]][["slope"]] <- raster("w001001.adf")
+## winter slope 
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters")
+rastercovs[["winter"]][["slope"]] <- raster("Winter_Slope2.tif")
 rastercovs[["winter"]][["slope"]] <- crop(rastercovs[["winter"]][["slope"]],winter_extent)
-rastercovs[["winter"]][["slope"]] <- aggregate(rastercovs[["winter"]][["slope"]], fact=3, fun=modal)
+rastercovs[["winter"]][["slope"]] <- aggregate(rastercovs[["winter"]][["slope"]], fact=4, fun=modal)
 plot(rastercovs[["winter"]][["slope"]])
 
 ## winter dist to water
 setwd(spatialdir)
 rastercovs[["winter"]][["dist_to_water"]] <- raster("Winter_H2O.tif")
 rastercovs[["winter"]][["dist_to_water"]] <- crop(rastercovs[["winter"]][["dist_to_water"]],winter_extent)
-rastercovs[["winter"]][["dist_to_water"]] <- aggregate(rastercovs[["winter"]][["dist_to_water"]], fact=3, fun=modal)
+rastercovs[["winter"]][["dist_to_water"]] <- aggregate(rastercovs[["winter"]][["dist_to_water"]], fact=4, fun=modal)
 plot(rastercovs[["winter"]][["dist_to_water"]])
 
 ## winter veg
 setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Winter_veg_raster\\Winter_veg_raster")
 rastercovs[["winter"]][["veg_class"]] <- raster("winter_veg.tif")
 rastercovs[["winter"]][["veg_class"]] <- crop(rastercovs[["winter"]][["veg_class"]],winter_extent)
-rastercovs[["winter"]][["veg_class"]] <- aggregate(rastercovs[["winter"]][["veg_class"]], fact=3, fun=modal,method="ngb")
-plot(rastercovs[["winter"]][["veg_class"]])
+attrib <- rastercovs[["winter"]][["veg_class"]]@data@attributes
+target <- levels(deer$winter$veg_class)
+subs <- attrib[[1]][,c("ID","HABITAT_TYPE")]
+subs$HabType2 <- c("Riparian","Fir_forest","PJ","mtn_mahog","asage","grssland")
+habitats <- rastercovs[["winter"]][["veg_class"]]@data@attributes[[1]]$HABITAT_TYPE
+is.factor(rastercovs[["winter"]][["veg_class"]])
+rastercovs[["winter"]][["veg_class"]] <- aggregate(rastercovs[["winter"]][["veg_class"]], fact=4, fun=modal)
+rastercovs[["winter"]][["veg_class"]] <- projectRaster(rastercovs[["winter"]][["veg_class"]],rastercovs[["winter"]][["slope"]],method="ngb")
+rastercovs[["winter"]][["veg_class"]] <- ratify(rastercovs[["winter"]][["veg_class"]])
+rat <- levels(rastercovs[["winter"]][["veg_class"]])[[1]]
+rat$landcover <- subs$HabType2
+rat$code <- subs$Habitat_Type
+levels(rastercovs[["winter"]][["veg_class"]]) <- rat
 
 res(rastercovs[["winter"]][["veg_class"]])
 
@@ -827,8 +858,10 @@ res(rastercovs[["winter"]][["veg_class"]])
 ###############
 
 rastercovs$summer <- stack(rastercovs$summer)   # done
+rastercovs$winter <- stack(rastercovs$winter)   # done
 
 plot(rastercovs$summer)
+plot(rastercovs$winter)
 
 
 ###############
@@ -866,12 +899,11 @@ altid<-factor( 'P003',levels=levels(deer[["summer"]]$altid))
 add2<-data.frame(altid)
 str(add2)
 
-predmaps[["summer"]][["GLMM"]]  <- raster::predict(object=rastercovs$summer,model=GLMMs[["summer"]],const=add2,type="prob",factors=levels(rastercovs$summer$veg_class))  # factor_list progress='text',factors=factor_list,
-
-
-
-predmaps[["summer"]][["RF"]]  <- raster::predict(object=rastercovs$summer,model=RFs[["summer"]])  # factors=factor_list
-
+# predmaps[["summer"]][["GLMM"]]  <- raster::predict(object=rastercovs$summer,model=GLMMs[["summer"]],const=add2,type="prob",factors=levels(rastercovs$summer$veg_class))  # factor_list progress='text',factors=factor_list,
+# 
+# 
+# 
+# predmaps[["summer"]][["RF"]]  <- raster::predict(object=rastercovs$summer,model=RFs[["summer"]])  # factors=factor_list
 
 #### can't seem to use predict function- need to use another strategy...
 
@@ -879,7 +911,7 @@ newdata <- data.frame(
   cos_aspect = getValues(rastercovs$summer$cos_aspect),
   sin_aspect = getValues(rastercovs$summer$sin_aspect),
   elevation = as.integer(getValues(rastercovs$summer$elevation)),
-  slope = as.integer(getValues(rastercovs$summer$elevation)),
+  slope = as.integer(getValues(rastercovs$summer$slope)),
   dist_to_water = getValues(rastercovs$summer$dist_to_water),
   veg_class = factor(veg_class$veg_class$classes[match(getValues(rastercovs$summer$veg_class),veg_class$veg_class$ID)],levels=levels(deer$summer$veg_class)),
   stand_cos_aspect = getValues(rastercovs$summer$stand_cos_aspect),
@@ -895,16 +927,165 @@ head(newdata)
 
 newdata$veg_class[1:10]
 
-
 ## deal with NAs?
 
 pred1 <- plogis(predict(GLMMs[["summer"]],newdata))     # predict to the full raster for summer range.  Does not take long!
 predmaps[["summer"]][["GLMM"]] <- rastercovs$summer$elevation
 predmaps[["summer"]][["GLMM"]] <- setValues(predmaps[["summer"]][["GLMM"]],pred1) 
 
-pred2 <- matrix(unlist(predict(RFs[["summer"]],newdata,OOB=TRUE,type="prob")),ncol=2,byrow=T)[,2]
+plot(predmaps$summer$GLMM)
+
+lenth <- ncell(rastercovs$summer$cos_aspect)
+pred2 <- numeric(lenth)
+jump = 10000
+counter=1
+
+while(counter<lenth){
+  pred2[counter:min((counter+jump-1),lenth)] <- matrix(unlist(predict(RFs[["summer"]],newdata[counter:min((counter+jump-1),lenth),],type="prob",OOB=TRUE)),ncol=2,byrow=T)[,2]   # this takes a lot longer... OOB=TRUE,
+  counter=counter+jump
+  cat(sprintf("%d ...",counter-1))
+}
+
+
+
+ #pred2 <- matrix(unlist(predict(RFs[["summer"]],newdata[1:5,],type="prob",OOB=TRUE)),ncol=2,byrow=T)[,2]   # this takes a lot longer... 
 predmaps[["summer"]][["RF"]] <- rastercovs$summer$elevation
-setValues(predmaps[["summer"]][["RF"]],pred2)
+predmaps[["summer"]][["RF"]] <- setValues(predmaps[["summer"]][["RF"]],pred2)
+
+
+###############
+# Make prediction for winter habitat using GLMM 
+###############
+
+#GLMMs[["winter"]]
+
+rastercovs$winter$stand_cos_aspect <- (rastercovs$winter$cos_aspect- mean(deer$winter$cos_aspect))/sd(deer$winter$cos_aspect)    # something strange here...
+plot(rastercovs$winter$stand_cos_aspect)
+
+rastercovs$winter$stand_sin_aspect <- (rastercovs$winter$sin_aspect- mean(deer$winter$sin_aspect))/sd(deer$winter$sin_aspect)
+
+rastercovs$winter$stand_elevation <- (rastercovs$winter$elevation- mean(deer$winter$elevation))/sd(deer$winter$elevation)
+
+rastercovs$winter$stand_slope <- (rastercovs$winter$slope- mean(deer$winter$slope))/sd(deer$winter$slope)
+
+rastercovs$winter$stand_dist_to_water <- (rastercovs$winter$dist_to_water- mean(deer$winter$dist_to_water))/sd(deer$winter$dist_to_water)
+
+is.factor(rastercovs$winter$veg_class)
+rat$classes <- rat$landcover
+levels(rastercovs$winter$veg_class) <- rat[,c("ID","classes")]
+
+predmaps[["winter"]] <- list()
+
+cat_cov <- c("veg_class")
+veg_class <- levels(rastercovs$winter$veg_class)
+names(veg_class) <- "veg_class"
+
+factor_list <- list(veg_class)
+names(factor_list) <- cat_cov
+
+altid<-factor( 'P003',levels=levels(deer[["winter"]]$altid))
+add2<-data.frame(altid)
+str(add2)
+
+# predmaps[["winter"]][["GLMM"]]  <- raster::predict(object=rastercovs$winter,model=GLMMs[["winter"]],const=add2,type="prob",factors=levels(rastercovs$winter$veg_class))  # factor_list progress='text',factors=factor_list,
+# 
+# 
+# 
+# predmaps[["winter"]][["RF"]]  <- raster::predict(object=rastercovs$winter,model=RFs[["winter"]])  # factors=factor_list
+
+
+#### can't seem to use predict function- need to use another strategy...
+
+newdata <- data.frame(
+  cos_aspect = getValues(rastercovs$winter$cos_aspect),
+  sin_aspect = getValues(rastercovs$winter$sin_aspect),
+  elevation = as.integer(getValues(rastercovs$winter$elevation)),
+  slope = as.integer(getValues(rastercovs$winter$slope)),
+  dist_to_water = getValues(rastercovs$winter$dist_to_water),
+  veg_class = factor(veg_class$veg_class$classes[match(getValues(rastercovs$winter$veg_class),veg_class$veg_class$ID)],levels=levels(deer$winter$veg_class)),
+  stand_cos_aspect = getValues(rastercovs$winter$stand_cos_aspect),
+  stand_sin_aspect = getValues(rastercovs$winter$stand_sin_aspect),
+  stand_elevation = getValues(rastercovs$winter$stand_elevation),
+  stand_slope = getValues(rastercovs$winter$stand_slope),
+  stand_dist_to_water = getValues(rastercovs$winter$stand_dist_to_water)
+)
+
+newdata$altid = factor( 'P003',levels=levels(deer[["winter"]]$altid))
+
+head(newdata)
+
+newdata$veg_class[1:10]
+
+
+## deal with NAs?
+
+pred1 <- plogis(predict(GLMMs[["winter"]],newdata))     # predict to the full raster for winter range.  Does not take long!
+predmaps[["winter"]][["GLMM"]] <- rastercovs$winter$elevation
+predmaps[["winter"]][["GLMM"]] <- setValues(predmaps[["winter"]][["GLMM"]],pred1) 
+
+plot(predmaps[["winter"]][["GLMM"]])
+
+lenth <- ncell(rastercovs$winter$cos_aspect)
+pred2 <- numeric(lenth)
+jump = 5000
+counter=1
+
+while(counter<lenth){
+  pred2[counter:min((counter+jump-1),lenth)] <- matrix(unlist(predict(RFs[["winter"]],newdata[counter:min((counter+jump-1),lenth),],type="prob",OOB=TRUE)),ncol=2,byrow=T)[,2]   # this takes a lot longer... OOB=TRUE,
+  counter=counter+jump
+  cat(sprintf("%d ...",counter-1))
+}
+
+  #pred2 <- matrix(unlist(predict(RFs[["winter"]],newdata[1:5,],type="prob",OOB=TRUE)),ncol=2,byrow=T)[,2]   # this takes a lot longer... 
+predmaps[["winter"]][["RF"]] <- rastercovs$winter$elevation
+predmaps[["winter"]][["RF"]] <- setValues(predmaps[["winter"]][["RF"]],pred2)
+
+
+## maps of comparison in predictions between the two methods
+
+predmaps[["winter"]][["corLocal"]] <- corLocal(predmaps[["winter"]][["RF"]],predmaps[["winter"]][["GLMM"]],9)
+predmaps[["summer"]][["corLocal"]] <- corLocal(predmaps[["summer"]][["RF"]],predmaps[["summer"]][["GLMM"]],9)
+
+
+## maps of difference in predictions between the two methods
+
+predmaps[["winter"]][["difference"]] <- predmaps[["winter"]][["RF"]]-predmaps[["winter"]][["GLMM"]]
+predmaps[["summer"]][["difference"]] <- predmaps[["summer"]][["RF"]]-predmaps[["summer"]][["GLMM"]]
+
+predmaps[["winter"]][["difference2"]] <- focal(predmaps[["winter"]][["difference"]], w=matrix(1, 5, 5), mean, na.rm=T)
+predmaps[["summer"]][["difference2"]] <- focal(predmaps[["summer"]][["difference"]], w=matrix(1, 5, 5), mean,na.rm=T)
+
+#focal(x, w=matrix(1, 5, 5), mean)
+
+
+par(mfrow=c(1,2))
+plot(predmaps[["winter"]][["RF"]])
+plot(predmaps[["winter"]][["GLMM"]])
+
+
+par(mfrow=c(1,2))
+plot(predmaps[["winter"]][["corLocal"]])
+plot(predmaps[["winter"]][["difference2"]])
+
+par(mfrow=c(2,1))
+plot(predmaps[["summer"]][["RF"]])
+plot(predmaps[["summer"]][["GLMM"]])
+
+par(mfrow=c(2,1))
+plot(predmaps[["summer"]][["corLocal"]])
+plot(predmaps[["summer"]][["difference2"]])
+
+### save prediction maps as data and gis layers
+
+allPoints <- list()
+allPoints[["summer"]] <- readOGR("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters","SummerUsed")
+allPoints[["winter"]] <- readOGR("E:\\Dropbox\\Mule Deer\\Methods paper\\GIS\\Rasters","WinterUsed")
+
+plot(rastercovs$summer$elevation)
+plot(predmaps$summer$RF)
+plot(predmaps$summer$GLMM)
+plot(allPoints$summer[seq(1,nrow(allPoints$summer),by=20),],pch=1,cex=0.5,add=T,col=gray(0.1))
+
 
 ### do class check..
 
@@ -913,15 +1094,208 @@ sapply(newdata,class)
 
 
 
-## visualize predictions..
+## visualize predictions from the two methods ...
 
 
+## first read in map of points 
+
+?plot.raster
+
+breakpoints <- c(0,0.2,0.4,0.5,0.6,0.7,0.8,0.9,1)
+cols <- brewer.pal(length(breakpoints),"Greens")  #   "RdYlGn"
+  
+#par(mfrow=c(1,2))
+graphics.off()
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\EcolAndEcol_submitted\\figures")
+svg(width=5,height=3,file="GLMM_SummerPredictions1.svg")
+prettymap(plot(predmaps[["summer"]][["GLMM"]],xaxt="n",yaxt="n",breaks=breakpoints,col=cols),drawarrow = F,mai=c(0,0,0,0.1),bty="n",drawbox = F)
+plot(allPoints$summer[seq(1,nrow(allPoints$summer),by=30),],pch=1,cex=0.5,add=T,col=gray(0.1))
+dev.off()
+
+
+breakpoints <- c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,1)
+cols <- brewer.pal(length(breakpoints),"Greens")  #   "RdYlGn"
+
+graphics.off()
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\EcolAndEcol_submitted\\figures")
+svg(width=5,height=3,file="RF_SummerPredictions1.svg")
+prettymap(plot(predmaps[["summer"]][["RF"]],xaxt="n",yaxt="n",breaks=breakpoints,col=cols),drawarrow = F,mai=c(0,0,0,0.1),bty="n",drawbox = F)
+plot(allPoints$summer[seq(1,nrow(allPoints$summer),by=30),],pch=1,cex=0.5,add=T,col=gray(0.1))
+dev.off()
+
+breakpoints <- c(-1,-0.75,-0.5,-0.25,0,0.25,0.5,0.75,1)
+cols <- brewer.pal(length(breakpoints),"RdYlGn")  #   ""
+
+graphics.off()
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\EcolAndEcol_submitted\\figures")
+svg(width=5,height=3,file="summer_corLocal.svg")
+prettymap(plot(predmaps[["summer"]][["corLocal"]],xaxt="n",yaxt="n",breaks=breakpoints,col=cols),drawarrow = F,mai=c(0,0,0,0.1),bty="n",drawbox = F)
+plot(allPoints$summer[seq(1,nrow(allPoints$summer),by=30),],pch=1,cex=0.5,add=T,col=gray(0.1))
+dev.off()
+graphics.off()
+
+breakpoints <- c(-0.8,-0.5,-0.2,0,0.1,0.2,0.4)
+cols <- brewer.pal(length(breakpoints),"PuOr")[length(breakpoints):1]  #   ""
+
+graphics.off()
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\EcolAndEcol_submitted\\figures")
+svg(width=5,height=3,file="summer_difference.svg")
+prettymap(plot(predmaps[["summer"]][["difference2"]],xaxt="n",yaxt="n",breaks=breakpoints,col=cols),drawarrow = F,mai=c(0,0,0,0.1),bty="n",drawbox = F)
+plot(allPoints$summer[seq(1,nrow(allPoints$summer),by=30),],pch=1,cex=0.5,add=T,col=gray(0.1))
+dev.off()
+graphics.off()
+
+breakpoints <- c(0,0.2,0.3,0.5,0.6,0.7,0.8,0.9,1)
+cols <- brewer.pal(length(breakpoints),"Greens")  #   "RdYlGn"
+
+#par(mfrow=c(1,2))
+graphics.off()
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\EcolAndEcol_submitted\\figures")
+svg(width=3,height=7,file="GLMM_WinterPredictions1.svg")
+prettymap(plot(predmaps[["winter"]][["GLMM"]],xaxt="n",yaxt="n",breaks=breakpoints,col=cols),drawarrow = F,mai=c(0,0,0,0.1),bty="n",drawbox = F)
+plot(allPoints$winter[seq(1,nrow(allPoints$winter),by=20),],pch=1,cex=0.5,add=T,col=gray(0.1))
+dev.off()
+
+breakpoints <- c(0,0.2,0.3,0.4,0.5,0.6,0.7,0.8,1)
+cols <- brewer.pal(length(breakpoints),"Greens")  #   "RdYlGn"
+
+graphics.off()
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\EcolAndEcol_submitted\\figures")
+svg(width=3,height=7,file="RF_WinterPredictions1.svg")
+prettymap(plot(predmaps[["winter"]][["RF"]],xaxt="n",yaxt="n",breaks=breakpoints,col=cols),drawarrow = F,mai=c(0,0,0,0.1),bty="n",drawbox = F)
+plot(allPoints$winter[seq(1,nrow(allPoints$winter),by=20),],pch=1,cex=0.5,add=T,col=gray(0.1))
+dev.off()
+
+
+breakpoints <- c(-1,-0.75,-0.5,-0.25,0,0.25,0.5,0.75,1)
+cols <- brewer.pal(length(breakpoints),"RdYlGn")  #   ""
+
+graphics.off()
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\EcolAndEcol_submitted\\figures")
+svg(width=3,height=7,file="winter_corLocal.svg.svg")
+prettymap(plot(predmaps[["winter"]][["corLocal"]],xaxt="n",yaxt="n",breaks=breakpoints,col=cols),drawarrow = F,mai=c(0,0,0,0.1),bty="n",drawbox = F)
+plot(allPoints$winter[seq(1,nrow(allPoints$winter),by=20),],pch=1,cex=0.5,add=T,col=gray(0.1))
+dev.off()
+
+breakpoints <- c(-0.6,-0.4,-0.2,0,0.1,0.2,0.6)
+cols <- brewer.pal(length(breakpoints),"PuOr")[length(breakpoints):1]  #   ""
+
+graphics.off()
+setwd("E:\\Dropbox\\Mule Deer\\Methods paper\\EcolAndEcol_submitted\\figures")
+svg(width=3,height=7,file="Winter_difference.svg")
+prettymap(plot(predmaps[["winter"]][["difference2"]],xaxt="n",yaxt="n",breaks=breakpoints,col=cols),drawarrow = F,mai=c(0,0,0,0.1),bty="n",drawbox = F)
+plot(allPoints$winter[seq(1,nrow(allPoints$winter),by=20),],pch=1,cex=0.5,add=T,col=gray(0.1))
+dev.off()
+graphics.off()
+
+
+
+plot(rastercovs[["summer"]][[1:6]])
+
+
+#### explore
 plot(predmaps[["summer"]][["GLMM"]])
+z1 <- drawExtent()
+z2 <- crop(rastercovs[["summer"]][[1:6]],y=z1)
+plot(z2)
+
+
+veg_class <- levels(rastercovs$summer$veg_class)
+names(veg_class) <- "veg_class"
+
+factor_list <- list(veg_class)
+names(factor_list) <- cat_cov
+
+altid<-factor( 'P003',levels=levels(deer[["summer"]]$altid))
+add2<-data.frame(altid)
+str(add2)
+newdata <- data.frame(
+  cos_aspect = mean(getValues(rastercovs$summer$cos_aspect)),
+  sin_aspect = mean(getValues(rastercovs$summer$sin_aspect)),
+  elevation = 1773,
+  slope = as.integer(mean(getValues(rastercovs$summer$slope))),
+  dist_to_water = mean(getValues(rastercovs$summer$dist_to_water)),
+  veg_class = factor(veg_class$veg_class$classes[match(28,veg_class$veg_class$ID)],levels=levels(deer$summer$veg_class)),
+  stand_cos_aspect = mean(getValues(rastercovs$summer$stand_cos_aspect)),
+  stand_sin_aspect = mean(getValues(rastercovs$summer$stand_sin_aspect)),
+  stand_elevation = (0 - mean(deer$summer$elevation))/sd(deer$summer$elevation),
+  stand_slope = mean(getValues(rastercovs$summer$stand_slope)),
+  stand_dist_to_water = mean(getValues(rastercovs$summer$stand_dist_to_water))
+)
+
+plogis(predict(GLMMs[["summer"]],newdata))
+
+
+# apparently the strong preference for summer region A is due to the interaction effect between slope and elevation (Fig. X)
+#  whereby low elevation, high-slope areas are strongly preferred. 
+
+
+summary(GLMMs[["summer"]])
 
 
 
 
 
 
+#### explore winter
+plot(predmaps[["winter"]][["difference2"]])
+z1 <- drawExtent()
+z2 <- crop(rastercovs[["winter"]][[1:6]],y=z1)
+plot(z2)
 
+plot(predmaps[["winter"]][["difference2"]])
+plot(z1,add=T)
+
+plot(rastercovs$winter$elevation)
+plot(z1,add=T)
+
+plot(rastercovs$winter$slope)
+plot(z1,add=T)
+
+plot(rastercovs$winter$dist_to_water)
+plot(z1,add=T)
+
+table(z2$veg_class@data@values)   # focal area is mostly P-J
+
+veg_class <- levels(rastercovs$winter$veg_class)
+names(veg_class) <- "veg_class"
+
+factor_list <- list(veg_class)
+names(factor_list) <- cat_cov
+
+altid<-factor( 'P005',levels=levels(deer[["winter"]]$altid))
+add2<-data.frame(altid)
+str(add2)
+newdata <- data.frame(
+  cos_aspect = mean(getValues(rastercovs$winter$cos_aspect)),
+  sin_aspect = mean(getValues(rastercovs$winter$sin_aspect)),
+  elevation = as.integer(1900),
+  slope = as.integer(60),
+  dist_to_water = 2500,
+  veg_class = factor(veg_class$veg_class$classes[match(8,veg_class$veg_class$ID)],levels=levels(deer$winter$veg_class)),
+  stand_cos_aspect = mean(getValues(rastercovs$winter$stand_cos_aspect)),
+  stand_sin_aspect = mean(getValues(rastercovs$winter$stand_sin_aspect)),
+  stand_elevation = (1900 - mean(deer$winter$elevation))/sd(deer$winter$elevation),
+  stand_slope = (60 - mean(deer$winter$slope))/sd(deer$winter$slope),
+  stand_dist_to_water = (2500 - mean(deer$winter$dist_to_water))/sd(deer$winter$dist_to_water),
+  altid = altid
+)
+
+plogis(predict(GLMMs[["winter"]],newdata))   ## very high
+
+predict(RFs[["winter"]],newdata,OOB=T,type="prob")   ## 
+
+
+lapply(deer$winter,class)
+
+lapply(newdata,class)
+
+
+# apparently the strong preference for winter region B is due to the interaction effect between slope and elevation (Fig. X)
+#  whereby low elevation, high-slope areas are strongly preferred. 
+
+
+getwd()
+
+save(deer,file="deerdata.RData")
 
